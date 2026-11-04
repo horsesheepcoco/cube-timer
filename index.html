@@ -2,271 +2,362 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cube Timer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cube Timer Pro</title>
 <style>
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: #10151d;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
+*{box-sizing:border-box}
+body{
+ margin:0;background:#10151d;color:white;
+ font-family:Arial,sans-serif;text-align:center
 }
-header {
-  padding: 22px;
-  font-size: 25px;
-  font-weight: bold;
-  letter-spacing: 2px;
+header{padding:22px;font-size:25px;font-weight:bold;letter-spacing:2px}
+main{padding:15px}
+select,button{
+ background:#202b39;color:white;border:1px solid #465365;
+ border-radius:8px;padding:11px 15px;cursor:pointer
 }
-select, button {
-  padding: 10px 15px;
-  border: 1px solid #465365;
-  border-radius: 8px;
-  background: #202b39;
-  color: white;
-  cursor: pointer;
+button:hover{background:#34465c}
+#scramble{
+ max-width:850px;margin:25px auto;
+ font-size:21px;line-height:1.8;color:#b8c7da
 }
-main { padding: 25px 12px; }
-#scramble {
-  max-width: 750px;
-  margin: 20px auto;
-  font-size: 20px;
-  line-height: 1.8;
-  color: #b8c7da;
+#timer{
+ font-size:clamp(65px,15vw,125px);
+ font-weight:bold;margin:55px 0 15px;
+ font-variant-numeric:tabular-nums
 }
-#timer {
-  font-size: clamp(65px, 15vw, 125px);
-  font-weight: bold;
-  font-variant-numeric: tabular-nums;
-  margin: 65px 0 15px;
+#status{color:#9aa9bc;font-size:17px}
+.ready{color:#00e68a!important}
+.holding{color:#ff4d4d!important}
+.stats{
+ display:flex;justify-content:center;gap:12px;
+ flex-wrap:wrap;margin:35px 0
 }
-#status {
-  color: #9aa9bc;
-  font-size: 17px;
+.stat{background:#202b39;border-radius:10px;padding:16px;min-width:100px}
+.stat small{color:#9aa9bc}
+.stat div{font-size:23px;margin-top:8px}
+#history{max-width:550px;margin:20px auto;text-align:left}
+.solve{
+ padding:12px;border-bottom:1px solid #344052;
+ display:flex;justify-content:space-between;align-items:center;gap:8px
 }
-.ready { color: #00e68a !important; }
-.holding { color: #ff4d4d !important; }
-.stats {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 40px 0;
-}
-.stat {
-  background: #202b39;
-  border-radius: 10px;
-  padding: 16px;
-  min-width: 100px;
-}
-.stat small { color: #9aa9bc; }
-.stat div { font-size: 23px; margin-top: 8px; }
-#history {
-  max-width: 500px;
-  margin: 25px auto;
-  text-align: left;
-}
-.solve {
-  padding: 12px;
-  border-bottom: 1px solid #344052;
-  display: flex;
-  justify-content: space-between;
-}
-footer { color: #718096; padding: 30px; }
+.solve button{padding:5px 9px;font-size:12px}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+footer{color:#718096;padding:30px}
 </style>
 </head>
 <body>
-
-<header>🧊 CUBE TIMER</header>
-
+<header>🧊 CUBE TIMER PRO</header>
 <main>
+  <p>選擇方塊尺寸</p>
   <select id="cube">
-    <option value="3">3×3×3</option>
+    <option value="2">2×2×2</option>
+    <option value="3" selected>3×3×3</option>
+    <option value="4">4×4×4</option>
+    <option value="5">5×5×5</option>
+    <option value="6">6×6×6</option>
+    <option value="7">7×7×7</option>
   </select>
 
-  <div id="scramble">正在產生公式...</div>
-  <button id="newScramble">新公式 ↻</button>
+  <div id="scramble">Scramble</div>
+  <div class="controls">
+    <button id="newScramble">重新產生公式 ↻</button>
+  </div>
 
   <div id="timer">0.000</div>
   <div id="status">按住空白鍵準備</div>
 
   <div class="stats">
-    <div class="stat">
-      <small>AO5</small>
-      <div id="ao5">--</div>
-    </div>
-    <div class="stat">
-      <small>AO12</small>
-      <div id="ao12">--</div>
-    </div>
-    <div class="stat">
-      <small>PB</small>
-      <div id="pb">--</div>
-    </div>
-    <div class="stat">
-      <small>SOLVES</small>
-      <div id="count">0</div>
-    </div>
+    <div class="stat"><small>AO5</small><div id="ao5">--</div></div>
+    <div class="stat"><small>AO12</small><div id="ao12">--</div></div>
+    <div class="stat"><small>PB</small><div id="pb">--</div></div>
+    <div class="stat"><small>SOLVES</small><div id="count">0</div></div>
   </div>
 
-  <h3>歷史成績</h3>
-  <div id="history"></div>
-  <button id="clearHistory">清除成績</button>
-</main>
+  <h3>成績判定</h3>
+  <div class="controls">
+    <button id="plus2">+2</button>
+    <button id="dnf">DNF</button>
+    <button id="normal">恢復正常</button>
+  </div>
+  <p id="penaltyStatus" style="color:#9aa9bc">目前沒有待修改的成績</p>
 
-<footer>Cube Timer · Practice Every Day</footer>
+  <h3 id="historyTitle">3×3 歷史成績</h3>
+  <div id="history"></div>
+  <button id="clearHistory">清除目前尺寸成績</button>
+</main>
+<footer>Cube Timer Pro · Practice Every Day</footer>
 
 <script>
 (() => {
-  const $ = id => document.getElementById(id);
-  const timer = $("timer");
-  const status = $("status");
+const $ = id => document.getElementById(id);
+const timer = $("timer");
+const status = $("status");
 
-  let state = "idle";
-  let ready = false;
-  let holdTimeout;
-  let startTime = 0;
-  let frame;
-  let solves = JSON.parse(localStorage.getItem("cubeSolves") || "[]");
+let state = "idle";
+let ready = false;
+let holdTimeout;
+let startTime = 0;
+let frame;
+let currentSize = 3;
+let selectedSolve = null;
 
-  const moves = ["R","L","U","D","F","B"];
-  const suffixes = ["","'","2"];
+const storageKey = "cubeTimerProV2";
 
-  function scramble() {
-    let result = [];
-    let previous = "";
+let database = {};
+try {
+ database = JSON.parse(localStorage.getItem(storageKey) || "{}");
+} catch(e) {
+ database = {};
+}
 
-    while (result.length < 20) {
-      let move = moves[Math.floor(Math.random() * moves.length)];
-      if (move === previous) continue;
-      previous = move;
-      result.push(move + suffixes[Math.floor(Math.random() * 3)]);
-    }
-    $("scramble").textContent = result.join(" ");
-  }
+function records() {
+ return database[currentSize] || [];
+}
 
-  function render() {
-    $("count").textContent = solves.length;
+function save() {
+ localStorage.setItem(storageKey, JSON.stringify(database));
+}
 
-    if (solves.length) {
-      $("pb").textContent = Math.min(...solves).toFixed(2);
-    } else {
-      $("pb").textContent = "--";
-    }
+function effective(s) {
+ if(s.penalty === "DNF") return Infinity;
+ return s.time + (s.penalty === "+2" ? 2 : 0);
+}
 
-    $("ao5").textContent = average(5);
-    $("ao12").textContent = average(12);
+function format(t) {
+ return Number.isFinite(t) ? t.toFixed(2) : "DNF";
+}
 
-    $("history").innerHTML = "";
-    solves.slice().reverse().forEach((time, i) => {
-      const row = document.createElement("div");
-      row.className = "solve";
-      const name = document.createElement("span");
-      const value = document.createElement("span");
-      name.textContent = "#" + (solves.length - i);
-      value.textContent = time.toFixed(3) + "s";
-      row.append(name, value);
-      $("history").appendChild(row);
-    });
-  }
+// 練習用多階方塊 Scramble 產生器
+function makeScramble(n) {
+ const faces = ["R","L","U","D","F","B"];
+ const axes = {R:0,L:0,U:1,D:1,F:2,B:2};
+ const suffixes = ["","'","2"];
+ const length = ({
+   2:11, 3:20, 4:40, 5:60, 6:80, 7:100
+ })[n];
 
-  function average(n) {
-    if (solves.length < n) return "--";
-    const recent = solves.slice(-n).slice().sort((a,b) => a-b);
-    const middle = recent.slice(1, -1);
-    return (middle.reduce((a,b) => a+b, 0) / middle.length).toFixed(2);
-  }
+ const moves = [];
+ let lastAxis = -1;
 
-  function reset() {
-    clearTimeout(holdTimeout);
-    cancelAnimationFrame(frame);
-    state = "idle";
-    ready = false;
-    timer.textContent = "0.000";
-    timer.className = "";
-    status.textContent = "按住空白鍵準備";
-  }
+ while(moves.length < length) {
+   const face = faces[Math.floor(Math.random()*6)];
+   const axis = axes[face];
 
-  function tick() {
-    if (state !== "running") return;
-    timer.textContent = ((performance.now() - startTime) / 1000).toFixed(3);
-    frame = requestAnimationFrame(tick);
-  }
+   if(axis === lastAxis) continue;
+   lastAxis = axis;
 
-  document.addEventListener("keydown", e => {
-    if (e.code !== "Space" || e.repeat) return;
-    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" ||
-        e.target.tagName === "TEXTAREA") return;
+   let prefix = "";
 
-    e.preventDefault();
+   if(n >= 4) {
+     const maxWidth = Math.floor(n/2);
+     if(Math.random() < 0.35) {
+       const width = 2 + Math.floor(Math.random()*maxWidth);
+       prefix = width + "";
+     }
+   }
 
-    if (state === "idle") {
-      state = "holding";
-      ready = false;
-      timer.className = "holding";
-      status.textContent = "準備中...";
+   moves.push(prefix + face + suffixes[
+     Math.floor(Math.random()*3)
+   ]);
+ }
+ return moves.join(" ");
+}
 
-      holdTimeout = setTimeout(() => {
-        ready = true;
-        timer.className = "ready";
-        status.textContent = "已準備！放開開始";
-      }, 500);
+function newScramble() {
+ $("scramble").textContent = makeScramble(currentSize);
+}
 
-    } else if (state === "running") {
-      cancelAnimationFrame(frame);
-      state = "stopped";
-      const result = (performance.now() - startTime) / 1000;
-      timer.textContent = result.toFixed(3);
-      solves.push(result);
-      localStorage.setItem("cubeSolves", JSON.stringify(solves));
-      render();
-      scramble();
-      status.textContent = "完成！按空白鍵再次準備";
-    } else if (state === "stopped") {
-      reset();
-    }
-  });
+function average(n) {
+ const data = records();
+ if(data.length < n) return "--";
 
-  document.addEventListener("keyup", e => {
-    if (e.code !== "Space") return;
-    e.preventDefault();
+ const recent = data.slice(-n).map(effective);
+ const sorted = [...recent].sort((a,b)=>a-b);
 
-    if (state !== "holding") return;
+ // Ao5 / Ao12：去掉最好及最差
+ const middle = sorted.slice(1,-1);
 
-    clearTimeout(holdTimeout);
+ if(middle.filter(x=>!Number.isFinite(x)).length > 0)
+   return "DNF";
 
-    if (ready) {
-      state = "running";
-      startTime = performance.now();
-      timer.className = "";
-      status.textContent = "計時中...";
-      tick();
-    } else {
-      state = "idle";
-      timer.className = "";
-      status.textContent = "請按住至少 0.5 秒";
-    }
-  });
+ return (middle.reduce((a,b)=>a+b,0)/middle.length).toFixed(2);
+}
 
-  window.addEventListener("blur", () => {
-    if (state === "holding") reset();
-  });
+function render() {
+ const data = records();
+ const valid = data.map(effective);
+ const best = Math.min(...valid);
 
-  $("newScramble").onclick = () => {
-    if (state !== "running") scramble();
-  };
+ $("count").textContent = data.length;
+ $("pb").textContent = data.length ? format(best) : "--";
+ $("ao5").textContent = average(5);
+ $("ao12").textContent = average(12);
+ $("historyTitle").textContent = currentSize+"×"+currentSize+" 歷史成績";
 
-  $("clearHistory").onclick = () => {
-    if (confirm("確定清除所有成績？")) {
-      solves = [];
-      localStorage.removeItem("cubeSolves");
-      render();
-    }
-  };
+ $("history").innerHTML = "";
 
-  scramble();
-  render();
+ data.slice().reverse().forEach((s,i)=>{
+   const index = data.length - 1 - i;
+   const row = document.createElement("div");
+   row.className = "solve";
+
+   const label = document.createElement("span");
+   label.textContent = "#"+(index+1);
+
+   const value = document.createElement("span");
+   value.textContent = format(effective(s))+"s";
+
+   const penalty = document.createElement("span");
+   penalty.textContent = s.penalty || "";
+
+   const del = document.createElement("button");
+   del.textContent = "刪除";
+   del.onclick = ()=>{
+     database[currentSize].splice(index,1);
+     save();
+     render();
+   };
+
+   row.append(label,value,penalty,del);
+   $("history").appendChild(row);
+ });
+}
+
+function reset() {
+ clearTimeout(holdTimeout);
+ cancelAnimationFrame(frame);
+ state = "idle";
+ ready = false;
+ timer.textContent = "0.000";
+ timer.className = "";
+ status.textContent = "按住空白鍵準備";
+}
+
+function tick() {
+ if(state !== "running") return;
+ timer.textContent =
+   ((performance.now()-startTime)/1000).toFixed(3);
+ frame = requestAnimationFrame(tick);
+}
+
+function finish() {
+ cancelAnimationFrame(frame);
+ const result = (performance.now()-startTime)/1000;
+
+ state = "stopped";
+ timer.textContent = result.toFixed(3);
+
+ if(!database[currentSize]) database[currentSize] = [];
+
+ database[currentSize].push({
+   time:result,
+   penalty:""
+ });
+
+ save();
+ selectedSolve = database[currentSize].length-1;
+ $("penaltyStatus").textContent = "可修改最新成績";
+ render();
+ newScramble();
+ status.textContent = "完成！按空白鍵再次準備";
+}
+
+document.addEventListener("keydown",e=>{
+ if(e.code !== "Space" || e.repeat) return;
+ if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) return;
+
+ e.preventDefault();
+
+ if(state === "idle") {
+   state = "holding";
+   ready = false;
+   timer.className = "holding";
+   status.textContent = "準備中...";
+
+   holdTimeout = setTimeout(()=>{
+     ready = true;
+     timer.className = "ready";
+     status.textContent = "已準備！放開開始";
+   },500);
+
+ } else if(state === "running") {
+   finish();
+
+ } else if(state === "stopped") {
+   reset();
+ }
+});
+
+document.addEventListener("keyup",e=>{
+ if(e.code !== "Space") return;
+ e.preventDefault();
+
+ if(state !== "holding") return;
+ clearTimeout(holdTimeout);
+
+ if(ready) {
+   state = "running";
+   startTime = performance.now();
+   timer.className = "";
+   status.textContent = "計時中...";
+   tick();
+ } else {
+   state = "idle";
+   timer.className = "";
+   status.textContent = "請按住至少 0.5 秒";
+ }
+});
+
+window.addEventListener("blur",()=>{
+ if(state === "holding") reset();
+});
+
+$("cube").onchange = ()=>{
+ if(state === "running" || state === "holding") return;
+
+ currentSize = Number($("cube").value);
+ selectedSolve = null;
+ reset();
+ newScramble();
+ render();
+ $("penaltyStatus").textContent = "目前沒有待修改的成績";
+};
+
+function setPenalty(value) {
+ const data = records();
+ if(selectedSolve === null || !data[selectedSolve]) {
+   $("penaltyStatus").textContent = "請先完成一次計時";
+   return;
+ }
+
+ data[selectedSolve].penalty = value;
+ save();
+ render();
+
+ $("penaltyStatus").textContent =
+   value ? "最新成績判定："+value : "已恢復正常成績";
+}
+
+$("plus2").onclick = ()=>setPenalty("+2");
+$("dnf").onclick = ()=>setPenalty("DNF");
+$("normal").onclick = ()=>setPenalty("");
+
+$("newScramble").onclick = ()=>{
+ if(state !== "running" && state !== "holding") newScramble();
+};
+
+$("clearHistory").onclick = ()=>{
+ if(confirm("確定清除這個尺寸的全部成績？")) {
+   database[currentSize] = [];
+   selectedSolve = null;
+   save();
+   render();
+ }
+};
+
+newScramble();
+render();
 })();
 </script>
 </body>
