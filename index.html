@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cube Timer</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #10151d;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+header {
+  padding: 22px;
+  font-size: 25px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+select, button {
+  padding: 10px 15px;
+  border: 1px solid #465365;
+  border-radius: 8px;
+  background: #202b39;
+  color: white;
+  cursor: pointer;
+}
+main { padding: 25px 12px; }
+#scramble {
+  max-width: 750px;
+  margin: 20px auto;
+  font-size: 20px;
+  line-height: 1.8;
+  color: #b8c7da;
+}
+#timer {
+  font-size: clamp(65px, 15vw, 125px);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  margin: 65px 0 15px;
+}
+#status {
+  color: #9aa9bc;
+  font-size: 17px;
+}
+.ready { color: #00e68a !important; }
+.holding { color: #ff4d4d !important; }
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 40px 0;
+}
+.stat {
+  background: #202b39;
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 100px;
+}
+.stat small { color: #9aa9bc; }
+.stat div { font-size: 23px; margin-top: 8px; }
+#history {
+  max-width: 500px;
+  margin: 25px auto;
+  text-align: left;
+}
+.solve {
+  padding: 12px;
+  border-bottom: 1px solid #344052;
+  display: flex;
+  justify-content: space-between;
+}
+footer { color: #718096; padding: 30px; }
+</style>
+</head>
+<body>
+
+<header>🧊 CUBE TIMER</header>
+
+<main>
+  <select id="cube">
+    <option value="3">3×3×3</option>
+  </select>
+
+  <div id="scramble">正在產生公式...</div>
+  <button id="newScramble">新公式 ↻</button>
+
+  <div id="timer">0.000</div>
+  <div id="status">按住空白鍵準備</div>
+
+  <div class="stats">
+    <div class="stat">
+      <small>AO5</small>
+      <div id="ao5">--</div>
+    </div>
+    <div class="stat">
+      <small>AO12</small>
+      <div id="ao12">--</div>
+    </div>
+    <div class="stat">
+      <small>PB</small>
+      <div id="pb">--</div>
+    </div>
+    <div class="stat">
+      <small>SOLVES</small>
+      <div id="count">0</div>
+    </div>
+  </div>
+
+  <h3>歷史成績</h3>
+  <div id="history"></div>
+  <button id="clearHistory">清除成績</button>
+</main>
+
+<footer>Cube Timer · Practice Every Day</footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const timer = $("timer");
+  const status = $("status");
+
+  let state = "idle";
+  let ready = false;
+  let holdTimeout;
+  let startTime = 0;
+  let frame;
+  let solves = JSON.parse(localStorage.getItem("cubeSolves") || "[]");
+
+  const moves = ["R","L","U","D","F","B"];
+  const suffixes = ["","'","2"];
+
+  function scramble() {
+    let result = [];
+    let previous = "";
+
+    while (result.length < 20) {
+      let move = moves[Math.floor(Math.random() * moves.length)];
+      if (move === previous) continue;
+      previous = move;
+      result.push(move + suffixes[Math.floor(Math.random() * 3)]);
+    }
+    $("scramble").textContent = result.join(" ");
+  }
+
+  function render() {
+    $("count").textContent = solves.length;
+
+    if (solves.length) {
+      $("pb").textContent = Math.min(...solves).toFixed(2);
+    } else {
+      $("pb").textContent = "--";
+    }
+
+    $("ao5").textContent = average(5);
+    $("ao12").textContent = average(12);
+
+    $("history").innerHTML = "";
+    solves.slice().reverse().forEach((time, i) => {
+      const row = document.createElement("div");
+      row.className = "solve";
+      const name = document.createElement("span");
+      const value = document.createElement("span");
+      name.textContent = "#" + (solves.length - i);
+      value.textContent = time.toFixed(3) + "s";
+      row.append(name, value);
+      $("history").appendChild(row);
+    });
+  }
+
+  function average(n) {
+    if (solves.length < n) return "--";
+    const recent = solves.slice(-n).slice().sort((a,b) => a-b);
+    const middle = recent.slice(1, -1);
+    return (middle.reduce((a,b) => a+b, 0) / middle.length).toFixed(2);
+  }
+
+  function reset() {
+    clearTimeout(holdTimeout);
+    cancelAnimationFrame(frame);
+    state = "idle";
+    ready = false;
+    timer.textContent = "0.000";
+    timer.className = "";
+    status.textContent = "按住空白鍵準備";
+  }
+
+  function tick() {
+    if (state !== "running") return;
+    timer.textContent = ((performance.now() - startTime) / 1000).toFixed(3);
+    frame = requestAnimationFrame(tick);
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.code !== "Space" || e.repeat) return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" ||
+        e.target.tagName === "TEXTAREA") return;
+
+    e.preventDefault();
+
+    if (state === "idle") {
+      state = "holding";
+      ready = false;
+      timer.className = "holding";
+      status.textContent = "準備中...";
+
+      holdTimeout = setTimeout(() => {
+        ready = true;
+        timer.className = "ready";
+        status.textContent = "已準備！放開開始";
+      }, 500);
+
+    } else if (state === "running") {
+      cancelAnimationFrame(frame);
+      state = "stopped";
+      const result = (performance.now() - startTime) / 1000;
+      timer.textContent = result.toFixed(3);
+      solves.push(result);
+      localStorage.setItem("cubeSolves", JSON.stringify(solves));
+      render();
+      scramble();
+      status.textContent = "完成！按空白鍵再次準備";
+    } else if (state === "stopped") {
+      reset();
+    }
+  });
+
+  document.addEventListener("keyup", e => {
+    if (e.code !== "Space") return;
+    e.preventDefault();
+
+    if (state !== "holding") return;
+
+    clearTimeout(holdTimeout);
+
+    if (ready) {
+      state = "running";
+      startTime = performance.now();
+      timer.className = "";
+      status.textContent = "計時中...";
+      tick();
+    } else {
+      state = "idle";
+      timer.className = "";
+      status.textContent = "請按住至少 0.5 秒";
+    }
+  });
+
+  window.addEventListener("blur", () => {
+    if (state === "holding") reset();
+  });
+
+  $("newScramble").onclick = () => {
+    if (state !== "running") scramble();
+  };
+
+  $("clearHistory").onclick = () => {
+    if (confirm("確定清除所有成績？")) {
+      solves = [];
+      localStorage.removeItem("cubeSolves");
+      render();
+    }
+  };
+
+  scramble();
+  render();
+})();
+</script>
+</body>
+</html>
